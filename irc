@@ -1,0 +1,118 @@
+#!/usr/bin/env perl
+# -*- perl -*-
+
+=head1 NAME
+
+irc - Plugin to graph the number of clients, channels and servers on an IRC
+network.
+
+=head1 CONFIGURATION
+
+You must set env.host because TLS requires a hostname. Localhost will not do
+unless your certificate is also for localhost, in which case only users on the
+same machine can use it.
+
+  [irc]
+    env.host  localhost
+    env.port  6697
+    env.cli   /usr/bin/gnutls-cli
+
+Actually you can probably use port 6667 and use /bin/nc for the cli setting and
+it would work without TLS.
+
+Note that we use the LIST command to get the number of channels and some servers
+limit the number of channels listed.
+
+=head1 USAGE
+
+This plugin connects to an IRC server via TLS using gnutls-cli and parses the
+welcome message, looking for numbers.
+
+=head1 AUTHOR
+
+Alex Schroeder <alex@gnu.org>
+
+=head1 LICENSE
+
+GPLv3
+
+=head1 MAGIC MARKERS
+
+  #%# family=manual
+  #%# capabilities=autoconf
+
+=cut
+
+my $HOST = $ENV{'host'} || 'localhost';
+my $PORT = $ENV{'port'} || '6697';
+my $CLI  = $ENV{'cli'}  || '/usr/bin/gnutls-cli';
+
+my $SCRIPT = << 'EOT';
+NICK munin
+USER username 0 * Munin Bot
+LIST
+EOT
+
+sub irc_login {
+  return qx/echo '$SCRIPT' | $CLI -p $PORT $HOST/;
+}
+
+if ($ARGV[0] and $ARGV[0] eq "autoconf") {
+  if (qx/$CLI 2>&1/ !~ /No hostname specified/) {
+    print "no ($CLI not found)\n";
+    exit 0;
+  }
+  my $result = irc_login();
+  print "yes\n";
+  exit 0;
+}
+
+if($ARGV[0] and $ARGV[0] eq "config") {
+    print "host_name $ENV{FQDN}\n";
+    print "graph_title ircd status\n";
+    print "graph_order clients channels servers\n";
+    print "graph_args -l 0\n";
+    print "clients.label clients\n";
+    print "clients.draw LINE2\n";
+    print "channels.label channels\n";
+    print "channels.draw LINE2\n";
+    print "servers.label servers\n";
+    print "servers.draw LINE2\n";
+    exit 0;
+}
+
+my $output = irc_login();
+my $result;
+
+# debug
+# print $output;
+
+# Do we have something like an UnrealIRCD?
+if($output =~  /There are (\d+) users and (\d+) invisible on (\d+) servers?/) {
+  $result{'clients'} = $1 + $2 - 1; # don't count this script
+  $result{'servers'} = $3;
+}
+# Or maybe some freendode hyperion stuff?
+elsif($output =~  /There are (\d+) listed and (\d+) unlisted users on (\d+) servers?/) {
+  $result{'clients'} = $1 + $2 - 1; # don't count this script
+  $result{'servers'} = $3;
+}
+# Or some recent ircnet ircd?
+elsif($output =~  /There are (\d+) users and \d+ services on (\d+) servers?/) {
+  $result{'clients'} = $1 - 1; # don't count this script
+  $result{'servers'} = $2;
+}
+# Anything else goes here
+elsif($output =~  /There are (\d+) users and (\d+) invisible/) {
+  $result{'clients'} = $1 + $2 - 1; # don't count this script
+}
+# And here (if there are no invisible count)
+elsif($output =~  /There are (\d+) users/) {
+  $result{'clients'} = $1 - 1; # don't count this script
+}
+
+$result{'channels'} = $output =~ /:\S+ 322 munin/;
+
+print "clients.value " . $result{'clients'} . "\n";
+print "channels.value " . $result{'channels'} . "\n";
+print "servers.value " . $result{'servers'} . "\n";
