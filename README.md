@@ -8,7 +8,7 @@ Your best bet is probably the
 It wasn't installed on my server when I was looking for IRC related
 plugins. All I could find was the `ircu` plugin.
 
-Sadly, the `ircu` plugin but it depends on `Net::IRC` and when you try
+Sadly, the `ircu` plugin depends on `Net::IRC` and when you try
 to install that Perl module, you get warning messages. If you check
 the [CPAN page](http://search.cpan.org/~apeiron/Net-IRC-0.79/IRC.pm),
 it says: "This module has been abandoned and is no longer developed.
