@@ -1,13 +1,19 @@
 # irc plugin for munin
 
-I wanted to use the `ircu` plugin for
-[Munin](http://munin-monitoring.org) but it depends on `Net::IRC` and
-when you try to install that Perl module, you get warning messages. If
-you check the
-[CPAN page](http://search.cpan.org/~apeiron/Net-IRC-0.79/IRC.pm), it
-says: "This module has been abandoned and is no longer developed. This
-release serves only to warn current and future users about this and to
-direct them to supported and actively-developed libraries for
+Want to use [Munin](http://munin-monitoring.org) to monitor an IRC
+server?
+
+Your best bet is probably the
+[irc2 plugin](https://github.com/munin-monitoring/contrib/blob/master/plugins/ircd/irc2).
+It wasn't installed on my server when I was looking for IRC related
+plugins. All I could find was the `ircu` plugin.
+
+Sadly, the `ircu` plugin but it depends on `Net::IRC` and when you try
+to install that Perl module, you get warning messages. If you check
+the [CPAN page](http://search.cpan.org/~apeiron/Net-IRC-0.79/IRC.pm),
+it says: "This module has been abandoned and is no longer developed.
+This release serves only to warn current and future users about this
+and to direct them to supported and actively-developed libraries for
 connecting Perl to IRC."
 
 I decided to do without the module and rewrote the plugin to use
